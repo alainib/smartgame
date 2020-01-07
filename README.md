@@ -1,0 +1,2 @@
+# smartgame
+resolve smart game
