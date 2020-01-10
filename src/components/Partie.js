@@ -1,8 +1,12 @@
 import React, { Component } from "react";
 import { StyleSheet, css } from "aphrodite";
-
+import { MdRotateLeft, MdRotateRight, MdFlip } from "react-icons/md";
+import { GiHorizontalFlip, GiVerticalFlip } from "react-icons/gi";
+import { Button } from "react-bootstrap";
 import "App.css";
+import * as matrixHelper from "matrixHelper";
 
+// https://github.com/rajeshpillai/youtube-react-components/blob/master/src/App.js
 const _baseSize = {
   x: 11,
   y: 5
@@ -112,10 +116,10 @@ export default class Partie extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      baseData: this.initBase(),
-      colors: this.initColors(),
-      usedLetters: [],
-      bricks: _bricks
+      baseData: this.initBase(), // represente le plateau avec les bricks dessus
+      colors: this.initColors(), // pour afficher les couleurs des bricks
+      usedLetters: [], // contient le nom des bricks posées sur le plateau
+      bricks: _bricks // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
     };
   }
   initColors() {
@@ -175,8 +179,8 @@ export default class Partie extends Component {
     const brick = this.state.bricks[name];
 
     const brickSize = {
-      x: this.getXLength(brick.matrix),
-      y: this.getYLength(brick.matrix)
+      x: matrixHelper.getXLength(brick.matrix),
+      y: matrixHelper.getYLength(brick.matrix)
     };
     let baseData = [...this.state.baseData];
     for (var i = 0; i < brickSize.x; i++) {
@@ -201,12 +205,12 @@ export default class Partie extends Component {
     // on test que la brick ne depasse pas du base
 
     const brickSize = {
-      x: this.getXLength(brick.matrix),
-      y: this.getYLength(brick.matrix)
+      x: matrixHelper.getXLength(brick.matrix),
+      y: matrixHelper.getYLength(brick.matrix)
     };
     const baseSize = {
-      x: this.getXLength(baseData),
-      y: this.getYLength(baseData)
+      x: matrixHelper.getXLength(baseData),
+      y: matrixHelper.getYLength(baseData)
     };
 
     if (x + brickSize.x > baseSize.x) {
@@ -220,7 +224,7 @@ export default class Partie extends Component {
     }
 
     // on crop une sous matrix de taille identique à brick dans baseData, plus facile pour comparer
-    const sub = this.getSub(baseData, x, y, brickSize.x, brickSize.y);
+    const sub = matrixHelper.getSub(baseData, x, y, brickSize.x, brickSize.y);
     // console.log(sub, brick.matrix);
     for (var i = 0; i < brickSize.x; i++) {
       for (var j = 0; j < brickSize.y; j++) {
@@ -234,29 +238,6 @@ export default class Partie extends Component {
 
     return can;
   };
-  /**
-   * découpe une sous matrice dans brick
-   * @param {*} brick
-   * @param {*} start_y position y à partir de laquel couper
-   * @param {*} start_x position x à partir de laquel couper
-   * @param {*} y_size
-   * @param {*} x_size :
-   */
-  getSub(brick, start_x, start_y, x_size, y_size) {
-    // https://stackoverflow.com/questions/52313225/how-to-extract-submatrix-matrix-a-matrix
-    return brick.filter((_, i) => i >= start_x && i < start_x + x_size).map(a => a.slice(start_y, start_y + y_size));
-  }
-  getYLength(brick) {
-    let max = 0;
-    for (var i in brick) {
-      max = brick[i].length > max ? brick[i].length : max;
-    }
-    return max;
-  }
-
-  getXLength(brick) {
-    return brick.length;
-  }
 
   renderBase() {
     const { baseData, colors } = this.state;
@@ -264,7 +245,7 @@ export default class Partie extends Component {
     return (
       <div>
         {baseData.map((row, i) => (
-          <div className={css(styles.bloc)} key={i}>
+          <div className={css(styles.flexrow)} key={i}>
             {row.map((col, j) => {
               return (
                 <div className={css(styles.item)} style={{ backgroundColor: colors[col] }} key={j}>
@@ -279,11 +260,21 @@ export default class Partie extends Component {
   }
   renderUnusedBricks() {
     let show = [];
-    for (var i in _bricks) {
+    for (var i in this.state.bricks) {
       if (!this.state.usedLetters.includes(i)) {
         show.push(
           <div key={i}>
-            <ShowBrick name={i} data={_bricks[i]} />
+            <ShowBrick
+              name={i}
+              data={_bricks[i]}
+              updateBrick={(name, newbrick) => {
+                let { bricks } = this.state;
+                bricks[name].matrix = newbrick;
+                this.setState({
+                  bricks
+                });
+              }}
+            />
           </div>
         );
       }
@@ -311,10 +302,63 @@ class ShowBrick extends Component {
 
     return (
       <div key={this.props.name} className="margin10">
-        <div>{this.props.name}</div>
+        <div className={css(styles.flexcolumn)}>
+          <div>{this.props.name}</div>
+
+          <div className={css(styles.flexrow)}>
+            <Button
+              variant="false"
+              onClick={() => {
+                const nbrick = matrixHelper.rotateRight(matrix);
+                this.props.updateBrick(this.props.name, nbrick);
+              }}
+            >
+              <div style={{ color: "white" }}>
+                <MdRotateLeft size={32} />
+              </div>
+            </Button>
+
+            <Button
+              variant="false"
+              onClick={() => {
+                const nbrick = matrixHelper.rotateLeft(matrix);
+                this.props.updateBrick(this.props.name, nbrick);
+              }}
+            >
+              <div style={{ color: "white" }}>
+                <MdRotateRight size={32} />
+              </div>
+            </Button>
+          </div>
+          <div className={css(styles.flexrow)}>
+            <Button
+              variant="false"
+              onClick={() => {
+                const nbrick = matrixHelper.flipY(matrix);
+                this.props.updateBrick(this.props.name, nbrick);
+              }}
+            >
+              <div style={{ color: "white" }}>
+                <GiHorizontalFlip size={32} />
+              </div>
+            </Button>
+            <Button
+              variant="false"
+              onClick={() => {
+                const nbrick = matrixHelper.flipX(matrix);
+                this.props.updateBrick(this.props.name, nbrick);
+              }}
+            >
+              <div style={{ color: "white" }}>
+                <GiVerticalFlip size={32} />
+              </div>
+            </Button>
+          </div>
+        </div>
+
         {matrix.map((row, i) => {
           return (
-            <div className={css(styles.bloc)} key={i}>
+            <div className={css(styles.flexrow)} key={i}>
               {row.map((col, j) => {
                 return <div className={css(styles.itemSmall)} style={{ backgroundColor: col ? color : false }} key={j}></div>;
               })}
@@ -326,25 +370,33 @@ class ShowBrick extends Component {
   }
 }
 
+// let itemSize = window.innerWidth / 20;
 const styles = StyleSheet.create({
-  bloc: {
+  flexrow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-
+    justifyContent: "center"
+  },
+  flexcolumn: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
     justifyContent: "center"
   },
 
   item: {
-    width: 80,
-    height: 80
+    width: 60,
+    height: 60,
+    borderRadius: 50
   },
   itemSmall: {
     width: 40,
-    height: 40
+    height: 40,
+    borderRadius: 50
   },
   smalltitle: {
-    fontSize: 15,
+    fontSize: 13,
     color: "white"
   }
 });
