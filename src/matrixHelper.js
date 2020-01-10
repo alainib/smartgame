@@ -1,35 +1,54 @@
 import gridl from "gridl";
 
+// permet d'enlever les lignes ou les colonnes entièrement composées de 0
+export function removeEmpty(array) {
+  console.log("remove empty", array);
+
+  array.forEach(function(a, i, allA) {
+    console.log(a, i);
+    if (!a.includes(1)) {
+      console.log("delete", allA);
+      allA.splice(i, 1);
+      console.log("delete after", allA);
+    }
+  });
+  return array;
+}
+
 export function rotateRight(array) {
-  var result = [];
+  let result = [];
   array.forEach(function(a, i, aa) {
     a.forEach(function(b, j, bb) {
       result[bb.length - j - 1] = result[bb.length - j - 1] || [];
       result[bb.length - j - 1][i] = b;
     });
   });
+  result = removeEmpty(result);
   return result;
 }
 
 export function rotateLeft(array) {
-  var result = [];
+  let result = [];
   array.forEach(function(a, i, aa) {
     a.forEach(function(b, j, bb) {
       result[j] = result[j] || [];
       result[j][aa.length - i - 1] = b;
     });
   });
+  result = removeEmpty(result);
   return result;
 }
 export function flipX(array) {
-  return gridl(array)
-    .flipX() // mirror the grid on the y-axis
+  let result = gridl(array)
+    .flipX() // mirror the grid on the x-axis
     .data(); // export the data array
+  return removeEmpty(result);
 }
 export function flipY(array) {
-  return gridl(array)
+  let result = gridl(array)
     .flipY() // mirror the grid on the y-axis
     .data(); // export the data array
+  return removeEmpty(result);
 }
 /**
  * découpe une sous matrice dans brick
@@ -45,7 +64,7 @@ export function getSub(brick, start_x, start_y, x_size, y_size) {
 }
 export function getYLength(brick) {
   let max = 0;
-  for (var i in brick) {
+  for (let i in brick) {
     max = brick[i].length > max ? brick[i].length : max;
   }
   return max;

@@ -1,6 +1,6 @@
 import React, { Component } from "react";
 import { StyleSheet, css } from "aphrodite";
-import { MdRotateLeft, MdRotateRight, MdFlip } from "react-icons/md";
+import { MdRotateLeft, MdRotateRight } from "react-icons/md";
 import { GiHorizontalFlip, GiVerticalFlip } from "react-icons/gi";
 import { Button } from "react-bootstrap";
 import "App.css";
@@ -136,6 +136,21 @@ export default class Partie extends Component {
     return can;
   };
 
+  onDragStart = (ev, id) => {
+    console.log("dragstart:", id);
+    ev.dataTransfer.setData("id", id);
+  };
+
+  onDragOver = ev => {
+    ev.preventDefault();
+  };
+
+  onDrop = (ev, position) => {
+    let id = ev.dataTransfer.getData("id");
+    console.log("onDrop", id, position);
+    this.trySetBrickAt(id, position.i, position.j);
+  };
+
   renderBase() {
     const { baseData, colors } = this.state;
 
@@ -144,8 +159,15 @@ export default class Partie extends Component {
         {baseData.map((row, i) => (
           <div className={css(styles.flexrow)} key={i}>
             {row.map((col, j) => {
+              let position = { i, j };
               return (
-                <div className={css(styles.item)} style={{ backgroundColor: colors[col] }} key={j}>
+                <div
+                  className={css(styles.item)}
+                  style={{ backgroundColor: colors[col] }}
+                  key={j}
+                  onDragOver={e => this.onDragOver(e)}
+                  onDrop={e => this.onDrop(e, position)}
+                >
                   <span className={css(styles.smalltitle)}>{col + i + "," + j}</span>
                 </div>
               );
@@ -171,6 +193,9 @@ export default class Partie extends Component {
                   bricks
                 });
               }}
+              onDragStart={this.onDragStart}
+              onDragOver={this.onDragOver}
+              onDrop={this.onDrop}
             />
           </div>
         );
@@ -201,7 +226,6 @@ class ShowBrick extends Component {
       <div key={this.props.name} className="margin10">
         <div className={css(styles.flexcolumn)}>
           <div>{this.props.name}</div>
-
           <div className={css(styles.flexrow)}>
             <Button
               variant="false"
@@ -253,15 +277,28 @@ class ShowBrick extends Component {
           </div>
         </div>
 
-        {matrix.map((row, i) => {
-          return (
-            <div className={css(styles.flexrow)} key={i}>
-              {row.map((col, j) => {
-                return <div className={css(styles.itemSmall)} style={{ backgroundColor: col ? color : false }} key={j}></div>;
-              })}
-            </div>
-          );
-        })}
+        <div
+          draggable
+          onDragStart={e => this.props.onDragStart(e, this.props.name)}
+          /*onDragOver={e => this.props.onDragOver(e)}
+                    onDrop={e => {
+                      this.props.onDrop(e, "wip");
+                    }} */
+        >
+          {matrix.map((row, i) => {
+            return (
+              <div className={css(styles.flexrow)} key={i}>
+                {row.map((col, j) => {
+                  return (
+                    <div className={css(styles.item)} style={{ backgroundColor: col ? color : false }} key={j}>
+                      {i === 0 && j === 0 ? "*" : null}
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </div>
       </div>
     );
   }
