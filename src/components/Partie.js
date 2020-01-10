@@ -5,112 +5,9 @@ import { GiHorizontalFlip, GiVerticalFlip } from "react-icons/gi";
 import { Button } from "react-bootstrap";
 import "App.css";
 import * as matrixHelper from "matrixHelper";
+import Config from "Config";
 
 // https://github.com/rajeshpillai/youtube-react-components/blob/master/src/App.js
-const _baseSize = {
-  x: 11,
-  y: 5
-};
-
-const _bricks = {
-  a: {
-    color: "orange",
-    matrix: [
-      [0, 1],
-      [0, 1],
-      [1, 1]
-    ]
-  },
-
-  b: {
-    color: "red",
-    matrix: [
-      [0, 1],
-      [1, 1],
-      [1, 1]
-    ]
-  },
-  c: {
-    color: "blue",
-    matrix: [
-      [0, 1],
-      [0, 1],
-      [0, 1],
-      [1, 1]
-    ]
-  },
-
-  d: {
-    color: "lightsalmon",
-    matrix: [
-      [0, 1],
-      [0, 1],
-      [1, 1],
-      [0, 1],
-      [0, 0]
-    ]
-  },
-  e: {
-    color: "green",
-    matrix: [
-      [0, 1],
-      [0, 1],
-      [1, 1],
-      [1, 0]
-    ]
-  },
-  f: {
-    color: "white",
-    matrix: [
-      [0, 1],
-      [1, 1]
-    ]
-  },
-
-  g: {
-    color: "deepskyblue",
-    matrix: [
-      [0, 0, 1],
-      [0, 0, 1],
-      [1, 1, 1]
-    ]
-  },
-  h: {
-    color: "magenta",
-    matrix: [
-      [0, 0, 1],
-      [0, 1, 1],
-      [1, 1, 0]
-    ]
-  },
-  i: {
-    color: "yellow",
-    matrix: [
-      [1, 0, 1],
-      [1, 1, 1]
-    ]
-  },
-
-  j: {
-    color: "darkslateblue",
-    matrix: [[1], [1], [1], [1]]
-  },
-  k: {
-    color: "greenyellow",
-    matrix: [
-      [1, 1],
-      [1, 1]
-    ]
-  },
-  l: {
-    color: "grey",
-    matrix: [
-      [0, 1, 0],
-      [1, 1, 1],
-      [0, 1, 0]
-    ]
-  }
-};
 
 export default class Partie extends Component {
   constructor(props) {
@@ -119,19 +16,19 @@ export default class Partie extends Component {
       baseData: this.initBase(), // represente le plateau avec les bricks dessus
       colors: this.initColors(), // pour afficher les couleurs des bricks
       usedLetters: [], // contient le nom des bricks posées sur le plateau
-      bricks: _bricks // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
+      bricks: Config.bricks // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
     };
   }
   initColors() {
     let colors = { x: "none" };
-    for (var i in _bricks) {
-      colors[i] = _bricks[i].color;
+    for (var i in Config.bricks) {
+      colors[i] = Config.bricks[i].color;
     }
     return colors;
   }
 
   initBase() {
-    const res = [...Array(_baseSize.y)].map(x => Array(_baseSize.x).fill(false));
+    const res = [...Array(Config.baseSize.y)].map(x => Array(Config.baseSize.x).fill(false));
     /* const res = [
       ["a", "a", "a", "a", false, false, "i", false, false, false, false],
       ["b", "b", "b", false, false, false, "i", false, false, false, false],
@@ -266,7 +163,7 @@ export default class Partie extends Component {
           <div key={i}>
             <ShowBrick
               name={i}
-              data={_bricks[i]}
+              data={this.state.bricks[i]}
               updateBrick={(name, newbrick) => {
                 let { bricks } = this.state;
                 bricks[name].matrix = newbrick;
@@ -400,131 +297,3 @@ const styles = StyleSheet.create({
     color: "white"
   }
 });
-
-/*
-const _bricks = {
-  a: {
-    color: "orange",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-
-  b: {
-    color: "red",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  c: {
-    color: "blue",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-
-  d: {
-    color: "lightsalmon",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  e: {
-    color: "green",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [1, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  f: {
-    color: "white",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-
-  g: {
-    color: "deepskyblue",
-    matrix: [
-      [0, 0, 1, 0, 0],
-      [0, 0, 1, 0, 0],
-      [1, 1, 1, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  h: {
-    color: "magenta",
-    matrix: [
-      [0, 0, 1, 0, 0],
-      [0, 1, 1, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  i: {
-    color: "yellow",
-    matrix: [
-      [1, 0, 1, 0, 0],
-      [1, 1, 1, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-
-  j: {
-    color: "darkslateblue",
-    matrix: [
-      [1, 0, 0, 0, 0],
-      [1, 0, 0, 0, 0],
-      [1, 0, 0, 0, 0],
-      [1, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  k: {
-    color: "greenyellow",
-    matrix: [
-      [1, 1, 0, 0, 0],
-      [1, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  },
-  l: {
-    color: "grey",
-    matrix: [
-      [0, 1, 0, 0, 0],
-      [1, 1, 1, 0, 0],
-      [0, 1, 0, 0, 0],
-      [0, 0, 0, 0, 0],
-      [0, 0, 0, 0, 0]
-    ]
-  }
-};*/
