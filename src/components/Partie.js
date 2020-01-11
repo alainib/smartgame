@@ -7,35 +7,34 @@ import "App.css";
 import * as matrixHelper from "matrixHelper";
 import Config from "Config";
 
+const _itemSize = 60; // window.innerWidth / 20;
+
 // https://github.com/rajeshpillai/youtube-react-components/blob/master/src/App.js
 
 export default class Partie extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      baseData: this.initBase(), // represente le plateau avec les bricks dessus
-      colors: this.initColors(), // pour afficher les couleurs des bricks
+      /* represente le plateau avec les bricks dessus, c'est une matrix ou les case occupées sont codées par la lettre de la bricks dessus,
+      plus facile pour les calculs
+      pour effacer/deplacer une brick il faut mettre à false position dans baseData et bricksPositions, et remettre la lettre dans usedLetters
+      */
+      baseData: this.initBase(),
+      bricksPositions: [], // tableau avec les bricks qui sont sur la base et leurs positions, permet de gérer les drags de la forme en entier
+
       usedLetters: [], // contient le nom des bricks posées sur le plateau
-      bricks: Config.bricks // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
+      bricks: Config.bricks, // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
+      showIndex: false
     };
   }
-  initColors() {
-    let colors = { x: "none" };
-    for (var i in Config.bricks) {
-      colors[i] = Config.bricks[i].color;
-    }
-    return colors;
-  }
-
+  toggleShowIndex = () => {
+    this.setState({
+      showIndex: !this.state.showIndex
+    });
+  };
+  showIndex;
   initBase() {
     const res = [...Array(Config.baseSize.y)].map(x => Array(Config.baseSize.x).fill(false));
-    /* const res = [
-      ["a", "a", "a", "a", false, false, "i", false, false, false, false],
-      ["b", "b", "b", false, false, false, "i", false, false, false, false],
-      ["b", false, false, false, false, false, "i", false, false, false, false],
-      [false, false, false, false, false, false, "i", false, false, false, false],
-      [false, "j", "j", "j", "j", "j", false, false, false, false, false]
-    ];*/
     return res;
   }
 
@@ -50,6 +49,7 @@ export default class Partie extends Component {
    @param name of the brick:a b c ....
    @param x abscisse index to set the brick at
    @param y ordonate index to set the brick at
+   @param deleteMe delete avant de faire un set
    on represente le base comme une matrix également
   
    0 _ _ _ _ _ _ _ > x 
@@ -61,20 +61,48 @@ export default class Partie extends Component {
   
   
   */
-  trySetBrickAt = (name, x, y) => {
+  trySetBrickAt = (name, x, y, deleteMe) => {
     const can = this.canSetBrick(name, x, y);
-
+    console.log("trySetBrickAt", { can, name, x, y });
     if (can) {
+      if (deleteMe) {
+        this.removeBrickFromBaseData(name);
+      }
       this.setBrickAt(name, x, y);
     } else {
       console.log("cannot be set here ! ");
     }
   };
 
+  /**
+   * remove a brick from baseData
+   * @param {*} name
+   */
+  removeBrickFromBaseData(name) {
+    console.log("removeBrickFromBaseData", name);
+    let baseData = [...this.state.baseData];
+
+    baseData.forEach(function(a, i) {
+      a.forEach(function(b, j) {
+        if (baseData[i][j] === name) {
+          baseData[i][j] = false;
+        }
+      });
+    });
+
+    let bricksPositions = this.state.bricksPositions.filter(elem => {
+      return elem.name !== name;
+    });
+    let usedLetters = this.state.usedLetters.filter(elem => {
+      return elem !== name;
+    });
+    this.setState({ baseData, bricksPositions, usedLetters });
+  }
+
   // met la brick dans cette position
   setBrickAt = (name, x, y) => {
+    console.log("setBrickAt", { name, x, y });
     const brick = this.state.bricks[name];
-
     const brickSize = {
       x: matrixHelper.getXLength(brick.matrix),
       y: matrixHelper.getYLength(brick.matrix)
@@ -82,14 +110,20 @@ export default class Partie extends Component {
     let baseData = [...this.state.baseData];
     for (var i = 0; i < brickSize.x; i++) {
       for (var j = 0; j < brickSize.y; j++) {
-        if (brick.matrix[i][j] === 1) {
-          baseData[i + x][j + y] = name;
+        try {
+          if (brick.matrix[i][j] === 1) {
+            baseData[i + x][j + y] = name;
+          }
+        } catch (error) {
+          console.log({ i, j, x, y, baseData });
+          console.error(error);
         }
       }
     }
 
     this.setState((prevState, props) => ({
       usedLetters: [...prevState.usedLetters, name],
+      bricksPositions: [...prevState.bricksPositions, { ...brick, name, position: { x, y } }],
       baseData
     }));
   };
@@ -122,12 +156,23 @@ export default class Partie extends Component {
 
     // on crop une sous matrix de taille identique à brick dans baseData, plus facile pour comparer
     const sub = matrixHelper.getSub(baseData, x, y, brickSize.x, brickSize.y);
-    // console.log(sub, brick.matrix);
-    for (var i = 0; i < brickSize.x; i++) {
-      for (var j = 0; j < brickSize.y; j++) {
-        if (brick.matrix[i][j] === 1) {
-          if (sub[i][j] !== false) {
-            can = false;
+
+    if (sub.length === 0) {
+      console.error("error getsub");
+      console.log(sub, brick.matrix);
+      console.log({
+        baseData,
+        x,
+        y,
+        brickSize
+      });
+    } else {
+      for (var i = 0; i < brickSize.x; i++) {
+        for (var j = 0; j < brickSize.y; j++) {
+          if (brick.matrix[i][j] === 1 && sub[i][j] !== name) {
+            if (sub[i][j] !== false) {
+              can = false;
+            }
           }
         }
       }
@@ -137,7 +182,6 @@ export default class Partie extends Component {
   };
 
   onDragStart = (ev, id) => {
-    console.log("dragstart:", id);
     ev.dataTransfer.setData("id", id);
   };
 
@@ -145,30 +189,65 @@ export default class Partie extends Component {
     ev.preventDefault();
   };
 
-  onDrop = (ev, position) => {
+  onDrop = (ev, position, source) => {
     let id = ev.dataTransfer.getData("id");
-    console.log("onDrop", id, position);
-    this.trySetBrickAt(id, position.i, position.j);
+    console.log("onDrop", id, source, position);
+    if (position !== undefined || source !== undefined) {
+      switch (source) {
+        case "removeZone":
+          this.removeBrickFromBaseData(id);
+          break;
+        case "brickOnBase":
+
+        default:
+          this.trySetBrickAt(id, position.x, position.y, true);
+      }
+    }
   };
 
   renderBase() {
-    const { baseData, colors } = this.state;
+    const { baseData, bricksPositions } = this.state;
 
     return (
-      <div>
-        {baseData.map((row, i) => (
-          <div className={css(styles.flexrow)} key={i}>
-            {row.map((col, j) => {
-              let position = { i, j };
+      <div className={css(styles.posRelative)}>
+        {bricksPositions.map((row, x) => {
+          return (
+            <div key={x} style={{ position: "absolute", left: _itemSize * row.position.y, top: _itemSize * row.position.x }}>
+              <ShowBrick
+                name={row.name}
+                data={row}
+                showControl={false}
+                updateBrick={(name, newbrick) => {
+                  let { bricks } = this.state;
+                  bricks[name].matrix = newbrick;
+                  this.setState({
+                    bricks
+                  });
+                }}
+                onDragStart={(ev, id) => {
+                  this.onDragStart(ev, id);
+                }}
+                onDragOver={this.onDragOver}
+                onDrop={e => this.onDrop(e, row.position, "brickOnBase")}
+              />
+            </div>
+          );
+        })}
+        {baseData.map((row, x) => (
+          <div className={css(styles.flexrow)} key={x}>
+            {row.map((col, y) => {
+              let position = { x, y };
+
               return (
-                <div
-                  className={css(styles.item)}
-                  style={{ backgroundColor: colors[col] }}
-                  key={j}
-                  onDragOver={e => this.onDragOver(e)}
-                  onDrop={e => this.onDrop(e, position)}
-                >
-                  <span className={css(styles.smalltitle)}>{col + i + "," + j}</span>
+                <div key={x + "-" + y} style={{ position: "absolute", left: _itemSize * y, top: _itemSize * x }}>
+                  <div
+                    className={baseData[x][y] === false ? css(styles.emptyItem) : css(styles.item)}
+                    key={y}
+                    onDragOver={this.onDragOver}
+                    onDrop={e => this.onDrop(e, position, "base")}
+                  >
+                    {this.state.showIndex && <span>{x + "," + y}</span>}
+                  </div>
                 </div>
               );
             })}
@@ -177,15 +256,17 @@ export default class Partie extends Component {
       </div>
     );
   }
+
   renderUnusedBricks() {
     let show = [];
     for (var i in this.state.bricks) {
       if (!this.state.usedLetters.includes(i)) {
         show.push(
-          <div key={i}>
+          <div key={i} className="margin10">
             <ShowBrick
               name={i}
               data={this.state.bricks[i]}
+              showControl
               updateBrick={(name, newbrick) => {
                 let { bricks } = this.state;
                 bricks[name].matrix = newbrick;
@@ -207,10 +288,14 @@ export default class Partie extends Component {
   render() {
     return (
       <div>
-        <h2>Partie :</h2>
+        <h2 onClick={this.toggleShowIndex}>Partie :</h2>
         <br />
-
-        {this.renderBase()}
+        <div className={css(styles.flexrow)}>
+          <div className={css(styles.removeZone)} onDragOver={e => this.onDragOver(e)} onDrop={e => this.onDrop(e, null, "removeZone")}>
+            remove Zone
+          </div>
+          {this.renderBase()}
+        </div>
 
         {this.renderUnusedBricks()}
       </div>
@@ -223,67 +308,66 @@ class ShowBrick extends Component {
     const { matrix, color } = this.props.data;
 
     return (
-      <div key={this.props.name} className="margin10">
-        <div className={css(styles.flexcolumn)}>
-          <div>{this.props.name}</div>
-          <div className={css(styles.flexrow)}>
-            <Button
-              variant="false"
-              onClick={() => {
-                const nbrick = matrixHelper.rotateRight(matrix);
-                this.props.updateBrick(this.props.name, nbrick);
-              }}
-            >
-              <div style={{ color: "white" }}>
-                <MdRotateLeft size={32} />
-              </div>
-            </Button>
+      <div key={this.props.name}>
+        {this.props.showControl && (
+          <div className={css(styles.flexcolumn)}>
+            <div>{this.props.name}</div>
+            <div className={css(styles.flexrow)}>
+              <Button
+                variant="false"
+                onClick={() => {
+                  const nbrick = matrixHelper.rotateRight(matrix);
+                  this.props.updateBrick(this.props.name, nbrick);
+                }}
+              >
+                <div style={{ color: "white" }}>
+                  <MdRotateLeft size={32} />
+                </div>
+              </Button>
 
-            <Button
-              variant="false"
-              onClick={() => {
-                const nbrick = matrixHelper.rotateLeft(matrix);
-                this.props.updateBrick(this.props.name, nbrick);
-              }}
-            >
-              <div style={{ color: "white" }}>
-                <MdRotateRight size={32} />
-              </div>
-            </Button>
+              <Button
+                variant="false"
+                onClick={() => {
+                  const nbrick = matrixHelper.rotateLeft(matrix);
+                  this.props.updateBrick(this.props.name, nbrick);
+                }}
+              >
+                <div style={{ color: "white" }}>
+                  <MdRotateRight size={32} />
+                </div>
+              </Button>
+            </div>
+            <div className={css(styles.flexrow)}>
+              <Button
+                variant="false"
+                onClick={() => {
+                  const nbrick = matrixHelper.flipY(matrix);
+                  this.props.updateBrick(this.props.name, nbrick);
+                }}
+              >
+                <div style={{ color: "white" }}>
+                  <GiHorizontalFlip size={32} />
+                </div>
+              </Button>
+              <Button
+                variant="false"
+                onClick={() => {
+                  const nbrick = matrixHelper.flipX(matrix);
+                  this.props.updateBrick(this.props.name, nbrick);
+                }}
+              >
+                <div style={{ color: "white" }}>
+                  <GiVerticalFlip size={32} />
+                </div>
+              </Button>
+            </div>
           </div>
-          <div className={css(styles.flexrow)}>
-            <Button
-              variant="false"
-              onClick={() => {
-                const nbrick = matrixHelper.flipY(matrix);
-                this.props.updateBrick(this.props.name, nbrick);
-              }}
-            >
-              <div style={{ color: "white" }}>
-                <GiHorizontalFlip size={32} />
-              </div>
-            </Button>
-            <Button
-              variant="false"
-              onClick={() => {
-                const nbrick = matrixHelper.flipX(matrix);
-                this.props.updateBrick(this.props.name, nbrick);
-              }}
-            >
-              <div style={{ color: "white" }}>
-                <GiVerticalFlip size={32} />
-              </div>
-            </Button>
-          </div>
-        </div>
-
+        )}
         <div
           draggable
           onDragStart={e => this.props.onDragStart(e, this.props.name)}
-          /*onDragOver={e => this.props.onDragOver(e)}
-                    onDrop={e => {
-                      this.props.onDrop(e, "wip");
-                    }} */
+          onDragOver={e => this.props.onDragOver(e)}
+          onDrop={e => this.props.onDrop(e)}
         >
           {matrix.map((row, i) => {
             return (
@@ -291,7 +375,7 @@ class ShowBrick extends Component {
                 {row.map((col, j) => {
                   return (
                     <div className={css(styles.item)} style={{ backgroundColor: col ? color : false }} key={j}>
-                      {i === 0 && j === 0 ? "*" : null}
+                      {i === 0 && j === 0 && <div className={css(styles.dragMarker)}>*</div>}
                     </div>
                   );
                 })}
@@ -304,33 +388,84 @@ class ShowBrick extends Component {
   }
 }
 
-// let itemSize = window.innerWidth / 20;
 const styles = StyleSheet.create({
+  posRelative: {
+    position: "relative",
+    display: "inline-block",
+    margin: 0,
+    padding: 0,
+    borderColor: "#1c1c1c",
+    backgroundColor: "#1c1c1c",
+    borderRadius: 20,
+    borderWidth: 5,
+    borderStyle: "solid",
+    width: _itemSize * Config.baseSize.x,
+    height: _itemSize * Config.baseSize.y
+  },
   flexrow: {
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    margin: 0,
+    padding: 0
   },
   flexcolumn: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center",
+    margin: 0,
+    padding: 0
+  },
+  removeZone: {
+    borderColor: "grey",
+    borderStyle: "dotted",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 25,
+    width: 200,
+    height: 300,
+    marginRight: 50
+  },
+  emptyItem: {
+    width: _itemSize,
+    height: _itemSize,
+    backgroundColor: "#302f2f",
+    borderRadius: 50,
+    borderWidth: 0,
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  item: {
+    display: "flex",
+    width: _itemSize,
+    height: _itemSize,
+    borderRadius: 50,
+    margin: 0,
+    padding: 0,
+    alignItems: "center",
     justifyContent: "center"
   },
 
-  item: {
-    width: 60,
-    height: 60,
-    borderRadius: 50
-  },
-  itemSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 50
-  },
   smalltitle: {
     fontSize: 13,
     color: "white"
+  },
+  dragMarker: {
+    borderRadius: 50,
+    width: 25,
+    height: 25,
+    borderWidth: 1,
+    color: "white",
+    borderStyle: "solid",
+    backgroundColor: "#282c34",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10000
   }
 });

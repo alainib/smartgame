@@ -2,14 +2,9 @@ import gridl from "gridl";
 
 // permet d'enlever les lignes ou les colonnes entièrement composées de 0
 export function removeEmpty(array) {
-  console.log("remove empty", array);
-
   array.forEach(function(a, i, allA) {
-    console.log(a, i);
     if (!a.includes(1)) {
-      console.log("delete", allA);
       allA.splice(i, 1);
-      console.log("delete after", allA);
     }
   });
   return array;

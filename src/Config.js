@@ -94,7 +94,7 @@ const bricks = {
     ]
   },
   l: {
-    color: "grey",
+    color: "#b8b4b4",
     matrix: [
       [0, 1, 0],
       [1, 1, 1],
