@@ -1,11 +1,11 @@
 html,
 body,
 #root {
+  background-color: #282c34;
   min-height: 100vh;
 }
 .App {
-  margin: 50;
-  background-color: #282c34;
+  padding: 50;
   min-height: 100vh;
 
   font-size: calc(18px + 6 * ((100vw - 320px) / 680));
