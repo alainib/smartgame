@@ -1,8 +1,11 @@
 import React, { Component } from "react";
 import { StyleSheet, css } from "aphrodite";
 import { MdRotateLeft, MdRotateRight } from "react-icons/md";
-import { GiHorizontalFlip, GiVerticalFlip } from "react-icons/gi";
+import { GiHorizontalFlip, GiVerticalFlip, GiSaveArrow } from "react-icons/gi";
+import { MdFormatListNumbered } from "react-icons/md";
+
 import { Button } from "react-bootstrap";
+
 import "App.css";
 import * as matrixHelper from "matrixHelper";
 import Config from "Config";
@@ -14,34 +17,51 @@ const _itemSize = 60; // window.innerWidth / 20;
 export default class Partie extends Component {
   constructor(props) {
     super(props);
-    this.state = {
-      /* represente le plateau avec les bricks dessus, c'est une matrix ou les case occupées sont codées par la lettre de la bricks dessus,
-      plus facile pour les calculs
-      pour effacer/deplacer une brick il faut mettre à false position dans baseData et bricksPositions, et remettre la lettre dans usedLetters
-      */
-      baseData: this.initBase(),
-      bricksPositions: [], // tableau avec les bricks qui sont sur la base et leurs positions, permet de gérer les drags de la forme en entier
 
-      usedLetters: [], // contient le nom des bricks posées sur le plateau
-      bricks: Config.bricks, // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
-      showIndex: false
-    };
+    const partieId = this.props.match.params.id;
+
+    if (partieId !== "new" && Config.preloadedBase[partieId]) {
+      const { baseData, bricksPositions, usedLetters } = Config.preloadedBase[partieId];
+      this.state = {
+        partieId,
+        baseData,
+        bricksPositions,
+        usedLetters,
+        bricks: Config.bricks, // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
+        showIndex: false
+      };
+    } else {
+      this.state = {
+        partieId,
+        /* represente le plateau avec les bricks dessus, c'est une matrix ou les case occupées sont codées par la lettre de la bricks dessus,
+        plus facile pour les calculs
+        pour effacer/deplacer une brick il faut mettre à false position dans baseData et bricksPositions, et remettre la lettre dans usedLetters
+        */
+        baseData: this.initBase(),
+        bricksPositions: [], // tableau avec les bricks qui sont sur la base et leurs positions, permet de gérer les drags de la forme en entier
+
+        usedLetters: [], // contient le nom des bricks posées sur le plateau
+        bricks: Config.bricks, // toutes les bricks, permet de les manipuler pour les tourner ou les poser sur le plateau
+        showIndex: false
+      };
+    }
   }
+
   toggleShowIndex = () => {
     this.setState({
       showIndex: !this.state.showIndex
     });
   };
-  showIndex;
+
   initBase() {
     const res = [...Array(Config.baseSize.y)].map(x => Array(Config.baseSize.x).fill(false));
     return res;
   }
 
   componentDidMount = async () => {
-    this.trySetBrickAt("l", 0, 3);
+    /*this.trySetBrickAt("l", 0, 3);
     this.trySetBrickAt("i", 2, 1);
-    this.trySetBrickAt("a", 2, 9);
+    this.trySetBrickAt("a", 2, 9);*/
   };
 
   /** 
@@ -197,8 +217,7 @@ export default class Partie extends Component {
         case "removeZone":
           this.removeBrickFromBaseData(id);
           break;
-        case "brickOnBase":
-
+        //        case "brickOnBase":
         default:
           this.trySetBrickAt(id, position.x, position.y, true);
       }
@@ -288,7 +307,29 @@ export default class Partie extends Component {
   render() {
     return (
       <div>
-        <h2 onClick={this.toggleShowIndex}>Partie :</h2>
+        <h2>
+          Partie :{" "}
+          <Button variant="dark" color="#09d3ac" onClick={this.toggleShowIndex}>
+            <MdFormatListNumbered size={32} />
+          </Button>{" "}
+          <Button
+            variant="dark"
+            color="#09d3ac"
+            onClick={() => {
+              const { baseData, usedLetters, bricksPositions } = this.state;
+              alert(
+                JSON.stringify({
+                  baseData,
+                  bricksPositions,
+                  usedLetters,
+                  bricksPositions
+                })
+              );
+            }}
+          >
+            <GiSaveArrow size={32} />
+          </Button>
+        </h2>
         <br />
         <div className={css(styles.flexrow)}>
           <div className={css(styles.removeZone)} onDragOver={e => this.onDragOver(e)} onDrop={e => this.onDrop(e, null, "removeZone")}>
@@ -372,10 +413,19 @@ class ShowBrick extends Component {
           {matrix.map((row, i) => {
             return (
               <div className={css(styles.flexrow)} key={i}>
-                {row.map((col, j) => {
+                {row.map((column, j) => {
                   return (
-                    <div className={css(styles.item)} style={{ backgroundColor: col ? color : false }} key={j}>
-                      {i === 0 && j === 0 && <div className={css(styles.dragMarker)}>*</div>}
+                    <div className={css(styles.item)} style={{ backgroundColor: column ? color : false }} key={j}>
+                      {i === 0 && j === 0 && (
+                        <div
+                          style={{
+                            ...styles.dragMarker._definition,
+                            color
+                          }}
+                        >
+                          *
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -399,8 +449,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderWidth: 5,
     borderStyle: "solid",
-    width: _itemSize * Config.baseSize.x,
-    height: _itemSize * Config.baseSize.y
+    width: 8 + _itemSize * Config.baseSize.x,
+    height: 8 + _itemSize * Config.baseSize.y
   },
   flexrow: {
     display: "flex",
@@ -458,14 +508,14 @@ const styles = StyleSheet.create({
   },
   dragMarker: {
     borderRadius: 50,
-    width: 25,
-    height: 25,
+    width: 20,
+    height: 20,
     borderWidth: 1,
-    color: "white",
     borderStyle: "solid",
-    backgroundColor: "#282c34",
+    display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#282c34",
     zIndex: 10000
   }
 });

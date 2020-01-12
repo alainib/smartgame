@@ -102,9 +102,102 @@ const bricks = {
     ]
   }
 };
+
+const preloadedBase = {
+  alain: {
+    baseData: [
+      ["k", "k", false, false, false, false, false, false, false, false, false],
+      ["k", "k", false, false, false, false, false, false, false, false, "c"],
+      ["i", "i", "f", "a", false, false, false, false, false, "h", "c"],
+      ["i", "f", "f", "a", false, false, false, false, "h", "h", "c"],
+      ["i", "i", "a", "a", false, false, false, "h", "h", "c", "c"]
+    ],
+    bricksPositions: [
+      {
+        color: "blue",
+        matrix: [
+          [0, 1],
+          [0, 1],
+          [0, 1],
+          [1, 1]
+        ],
+        name: "c",
+        position: {
+          x: 1,
+          y: 9
+        }
+      },
+      {
+        color: "magenta",
+        matrix: [
+          [0, 0, 1],
+          [0, 1, 1],
+          [1, 1, 0]
+        ],
+        name: "h",
+        position: {
+          x: 2,
+          y: 7
+        }
+      },
+      {
+        color: "yellow",
+        matrix: [
+          [1, 1],
+          [1, 0],
+          [1, 1]
+        ],
+        name: "i",
+        position: {
+          x: 2,
+          y: 0
+        }
+      },
+      {
+        color: "white",
+        matrix: [
+          [0, 1],
+          [1, 1]
+        ],
+        name: "f",
+        position: {
+          x: 2,
+          y: 1
+        }
+      },
+      {
+        color: "orange",
+        matrix: [
+          [0, 1],
+          [0, 1],
+          [1, 1]
+        ],
+        name: "a",
+        position: {
+          x: 2,
+          y: 2
+        }
+      },
+      {
+        color: "greenyellow",
+        matrix: [
+          [1, 1],
+          [1, 1]
+        ],
+        name: "k",
+        position: {
+          x: 0,
+          y: 0
+        }
+      }
+    ],
+    usedLetters: ["c", "h", "i", "f", "a", "k"]
+  }
+};
 export default {
   baseSize,
-  bricks
+  bricks,
+  preloadedBase
 };
 
 /*
