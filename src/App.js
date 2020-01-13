@@ -8,8 +8,6 @@ import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
 import Home from "components/Home";
 import Partie from "components/Partie";
 
-
-
 export default class App extends Component {
   constructor(props) {
     super(props);
@@ -51,7 +49,7 @@ export default class App extends Component {
             </Nav>
 
             <Nav.Item>
-              <i className="smallTextRed">Tous droits réservés par LONPOS ©</i>
+              <i className="smallTextRed">Tous droits réservés pour LONPOS ©</i>
             </Nav.Item>
             <Nav.Item>
               <Button

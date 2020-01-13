@@ -1,8 +1,7 @@
 import React, { Component } from "react";
 import { StyleSheet, css } from "aphrodite";
-import { MdRotateLeft, MdRotateRight } from "react-icons/md";
+import { MdRotateLeft, MdRotateRight, MdFormatListNumbered } from "react-icons/md";
 import { GiHorizontalFlip, GiVerticalFlip, GiSaveArrow } from "react-icons/gi";
-import { MdFormatListNumbered } from "react-icons/md";
 
 import { Button } from "react-bootstrap";
 
@@ -58,11 +57,7 @@ export default class Partie extends Component {
     return res;
   }
 
-  componentDidMount = async () => {
-    /*this.trySetBrickAt("l", 0, 3);
-    this.trySetBrickAt("i", 2, 1);
-    this.trySetBrickAt("a", 2, 9);*/
-  };
+  componentDidMount = async () => {};
 
   /** 
    * essai de mettre une brick dans une position
@@ -320,7 +315,6 @@ export default class Partie extends Component {
               alert(
                 JSON.stringify({
                   baseData,
-                  bricksPositions,
                   usedLetters,
                   bricksPositions
                 })
@@ -331,6 +325,7 @@ export default class Partie extends Component {
           </Button>
         </h2>
         <br />
+
         <div className={css(styles.flexrow)}>
           <div className={css(styles.removeZone)} onDragOver={e => this.onDragOver(e)} onDrop={e => this.onDrop(e, null, "removeZone")}>
             remove Zone
@@ -345,58 +340,82 @@ export default class Partie extends Component {
 }
 
 class ShowBrick extends Component {
+  constructor(props) {
+    super(props);
+  }
+
+  handleKeyboard = event => {
+    const arrowKeys = ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"];
+
+    if (arrowKeys.includes(event.key)) {
+      event.preventDefault();
+      switch (event.key) {
+        case "ArrowLeft":
+          this.rotateLeft();
+          break;
+        case "ArrowRight":
+          this.rotateRight();
+          break;
+        case "ArrowUp":
+          this.flipY();
+          break;
+        case "ArrowDown":
+          this.flipX();
+          break;
+      }
+    }
+  };
+
+  rotateRight = () => {
+    const { matrix } = this.props.data;
+    const nbrick = matrixHelper.rotateRight(matrix);
+    this.props.updateBrick(this.props.name, nbrick);
+  };
+
+  rotateLeft = () => {
+    const { matrix } = this.props.data;
+    const nbrick = matrixHelper.rotateLeft(matrix);
+    this.props.updateBrick(this.props.name, nbrick);
+  };
+  flipY = () => {
+    const { matrix } = this.props.data;
+    const nbrick = matrixHelper.flipY(matrix);
+    this.props.updateBrick(this.props.name, nbrick);
+  };
+  flipX = () => {
+    const { matrix } = this.props.data;
+    const nbrick = matrixHelper.flipX(matrix);
+    this.props.updateBrick(this.props.name, nbrick);
+  };
+
   render() {
     const { matrix, color } = this.props.data;
 
     return (
-      <div key={this.props.name}>
+      <div key={this.props.name} tabIndex="0" onKeyDown={this.handleKeyboard}>
         {this.props.showControl && (
           <div className={css(styles.flexcolumn)}>
             <div>{this.props.name}</div>
             <div className={css(styles.flexrow)}>
-              <Button
-                variant="false"
-                onClick={() => {
-                  const nbrick = matrixHelper.rotateRight(matrix);
-                  this.props.updateBrick(this.props.name, nbrick);
-                }}
-              >
+              <Button variant="false" onClick={this.rotateRight}>
                 <div style={{ color: "white" }}>
                   <MdRotateLeft size={32} />
                 </div>
               </Button>
 
-              <Button
-                variant="false"
-                onClick={() => {
-                  const nbrick = matrixHelper.rotateLeft(matrix);
-                  this.props.updateBrick(this.props.name, nbrick);
-                }}
-              >
+              <Button variant="false" onClick={this.rotateLeft}>
                 <div style={{ color: "white" }}>
                   <MdRotateRight size={32} />
                 </div>
               </Button>
             </div>
             <div className={css(styles.flexrow)}>
-              <Button
-                variant="false"
-                onClick={() => {
-                  const nbrick = matrixHelper.flipY(matrix);
-                  this.props.updateBrick(this.props.name, nbrick);
-                }}
-              >
+              <Button variant="false" onClick={this.flipY}>
                 <div style={{ color: "white" }}>
                   <GiHorizontalFlip size={32} />
                 </div>
               </Button>
-              <Button
-                variant="false"
-                onClick={() => {
-                  const nbrick = matrixHelper.flipX(matrix);
-                  this.props.updateBrick(this.props.name, nbrick);
-                }}
-              >
+              <Button variant="false" onClick={this.flipX}>
                 <div style={{ color: "white" }}>
                   <GiVerticalFlip size={32} />
                 </div>
@@ -438,6 +457,7 @@ class ShowBrick extends Component {
   }
 }
 
+const _removeZoneWidth = 200;
 const styles = StyleSheet.create({
   posRelative: {
     position: "relative",
@@ -451,6 +471,10 @@ const styles = StyleSheet.create({
     borderStyle: "solid",
     width: 8 + _itemSize * Config.baseSize.x,
     height: 8 + _itemSize * Config.baseSize.y
+  },
+  baseSize: {
+    height: 10 + _itemSize * Config.baseSize.y,
+    width: _removeZoneWidth + 50 + _itemSize * Config.baseSize.x
   },
   flexrow: {
     display: "flex",
@@ -468,6 +492,11 @@ const styles = StyleSheet.create({
     margin: 0,
     padding: 0
   },
+  shapeOutside: {
+    shapeOutside: "none",
+    float: "left"
+  },
+
   removeZone: {
     borderColor: "grey",
     borderStyle: "dotted",
@@ -475,7 +504,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 25,
-    width: 200,
+    width: _removeZoneWidth,
     height: 300,
     marginRight: 50
   },
