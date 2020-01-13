@@ -196,8 +196,16 @@ export default class Partie extends Component {
     return can;
   };
 
-  onDragStart = (ev, id) => {
-    ev.dataTransfer.setData("id", id);
+  /**
+   * @param ev
+   * @param name
+   * @param tx translation
+   * @param ty translation
+   */
+  onDragStart = (ev, name, tx, ty) => {
+    ev.dataTransfer.setData("name", name);
+    ev.dataTransfer.setData("tx", tx);
+    ev.dataTransfer.setData("ty", ty);
   };
 
   onDragOver = ev => {
@@ -205,16 +213,30 @@ export default class Partie extends Component {
   };
 
   onDrop = (ev, position, source) => {
-    let id = ev.dataTransfer.getData("id");
-    console.log("onDrop", id, source, position);
-    if (position !== undefined || source !== undefined) {
-      switch (source) {
-        case "removeZone":
-          this.removeBrickFromBaseData(id);
-          break;
-        //        case "brickOnBase":
-        default:
-          this.trySetBrickAt(id, position.x, position.y, true);
+    function isDefined(val) {
+      return val !== undefined && val !== "undefined";
+    }
+    let name = ev.dataTransfer.getData("name");
+    let tx = isDefined(ev.dataTransfer.getData("tx")) ? ev.dataTransfer.getData("tx") : 0;
+    let ty = isDefined(ev.dataTransfer.getData("ty")) ? ev.dataTransfer.getData("ty") : 0;
+
+    console.log("onDrop", {
+      name,
+      source,
+      tx,
+      ty,
+      position
+    });
+    if (name) {
+      if (position !== undefined || source !== undefined) {
+        switch (source) {
+          case "removeZone":
+            this.removeBrickFromBaseData(name);
+            break;
+          //        case "brickOnBase":
+          default:
+            this.trySetBrickAt(name, position.x - tx, position.y - ty, true);
+        }
       }
     }
   };
@@ -342,6 +364,16 @@ export default class Partie extends Component {
 class ShowBrick extends Component {
   constructor(props) {
     super(props);
+    this.state = {
+      translationX: 0,
+      translationY: 0
+    };
+  }
+  setTranslation(x, y) {
+    this.setState({
+      translationX: x,
+      translationY: y
+    });
   }
 
   handleKeyboard = event => {
@@ -425,16 +457,29 @@ class ShowBrick extends Component {
         )}
         <div
           draggable
-          onDragStart={e => this.props.onDragStart(e, this.props.name)}
+          onDragStart={e => {
+            console.log("drag strat from showbrick");
+            this.props.onDragStart(e, this.props.name, this.state.translationX, this.state.translationY);
+          }}
           onDragOver={e => this.props.onDragOver(e)}
-          onDrop={e => this.props.onDrop(e)}
+          onDrop={e => {
+            console.log("onDrop from showbrick");
+            this.props.onDrop(e);
+          }}
         >
           {matrix.map((row, i) => {
             return (
               <div className={css(styles.flexrow)} key={i}>
                 {row.map((column, j) => {
                   return (
-                    <div className={css(styles.item)} style={{ backgroundColor: column ? color : false }} key={j}>
+                    <div
+                      className={css(styles.item)}
+                      style={{ backgroundColor: column ? color : false }}
+                      key={j}
+                      onMouseDown={e => {
+                        this.setTranslation(i, j);
+                      }}
+                    >
                       {i === 0 && j === 0 && (
                         <div
                           style={{

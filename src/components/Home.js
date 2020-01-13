@@ -1,5 +1,5 @@
 import React, { Component } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Alert } from "react-bootstrap";
 import "App.css";
 import { GoPlay } from "react-icons/go";
 import { Link } from "react-router-dom";
@@ -14,6 +14,35 @@ export default class Home extends Component {
     let availableParties = [];
 
     for (let i in Config.preloadedBase) {
+      if (i === "0") {
+        availableParties.push(
+          <div className="breakFlexWrap" key={i * i}>
+            <Alert variant="primary">Starter</Alert>
+          </div>
+        );
+      }
+      if (i === "33") {
+        availableParties.push(
+          <div className="breakFlexWrap" key={i * i}>
+            <Alert variant="success">Expert</Alert>
+          </div>
+        );
+      }
+      if (i === "49") {
+        availableParties.push(
+          <div className="breakFlexWrap" key={i * i}>
+            <Alert variant="warning">Master</Alert>
+          </div>
+        );
+      }
+      if (i === "69") {
+        availableParties.push(
+          <div className="breakFlexWrap" key={i * i}>
+            <Alert variant="danger">Wizard</Alert>
+          </div>
+        );
+      }
+
       if (Config.preloadedBase[i]) {
         availableParties.push(
           <Link className="margin10 flex-item" to={`/partie/${i}`} key={i}>
@@ -40,15 +69,6 @@ export default class Home extends Component {
         <div>Liste des parties disponibles :</div>
 
         <ul className="flex-container wrap">{availableParties}</ul>
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
-        <br />
         <br />
         <br />
         <br />

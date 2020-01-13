@@ -65,3 +65,7 @@ body,
   font-size: 13;
   color: "red";
 }
+
+.breakFlexWrap {
+  flex-basis: 100%;
+}
