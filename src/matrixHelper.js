@@ -18,11 +18,12 @@ export function rotateRight(array) {
       result[bb.length - j - 1][i] = b;
     });
   });
-  result = removeEmpty(result);
+  // result = removeEmpty(result);
   return result;
 }
 
 export function rotateLeft(array) {
+  console.log("f", array);
   let result = [];
   array.forEach(function(a, i, aa) {
     a.forEach(function(b, j, bb) {
@@ -30,21 +31,26 @@ export function rotateLeft(array) {
       result[j][aa.length - i - 1] = b;
     });
   });
-  result = removeEmpty(result);
+  // result = removeEmpty(result);
   return result;
 }
+
 export function flipX(array) {
   let result = gridl(array)
     .flipX() // mirror the grid on the x-axis
     .data(); // export the data array
-  return removeEmpty(result);
+  return result;
+  // return removeEmpty(result);
 }
+
 export function flipY(array) {
   let result = gridl(array)
     .flipY() // mirror the grid on the y-axis
     .data(); // export the data array
-  return removeEmpty(result);
+  return result;
+  // return removeEmpty(result);
 }
+
 /**
  * découpe une sous matrice dans brick
  * @param {*} brick

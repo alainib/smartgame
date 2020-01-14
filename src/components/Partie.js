@@ -269,11 +269,11 @@ export default class Partie extends Component {
             </div>
           );
         })}
+        {/* on affiche les bricks en dessous des cases pour pouvoir faire le drop sur n'importe qu'elle case */}
         {baseData.map((row, x) => (
-          <div className={css(styles.flexrow)} key={x}>
+          <div key={x}>
             {row.map((col, y) => {
               let position = { x, y };
-
               return (
                 <div key={x + "-" + y} style={{ position: "absolute", left: _itemSize * y, top: _itemSize * x }}>
                   <div
@@ -298,7 +298,7 @@ export default class Partie extends Component {
     for (var i in this.state.bricks) {
       if (!this.state.usedLetters.includes(i)) {
         show.push(
-          <div key={i} className="margin10">
+          <div key={i}>
             <ShowBrick
               name={i}
               data={this.state.bricks[i]}
@@ -318,6 +318,7 @@ export default class Partie extends Component {
         );
       }
     }
+    
     return <div className="flex-container wrap">{show}</div>;
   }
 
@@ -420,83 +421,97 @@ class ShowBrick extends Component {
     this.props.updateBrick(this.props.name, nbrick);
   };
 
-  render() {
+  matrixRender() {
     const { matrix, color } = this.props.data;
-
     return (
-      <div key={this.props.name} tabIndex="0" onKeyDown={this.handleKeyboard}>
-        {this.props.showControl && (
-          <div className={css(styles.flexcolumn)}>
-            <div>{this.props.name}</div>
-            <div className={css(styles.flexrow)}>
-              <Button variant="false" onClick={this.rotateRight}>
-                <div style={{ color: "white" }}>
-                  <MdRotateLeft size={32} />
-                </div>
-              </Button>
+      <div
+        style={{ position: "relative", margin: 0, padding: 0 }}
+        draggable
+        onDragStart={e => {
+          console.log("drag strat from showbrick");
+          this.props.onDragStart(e, this.props.name, this.state.translationX, this.state.translationY);
+        }}
+      >
+        {matrix.map((row, i) => {
+          return (
+            <div key={i}>
+              {row.map((column, j) => {
+                return (
+                  <div
+                    className={css(styles.item)}
+                    style={{ position: "absolute", left: _itemSize * j, top: _itemSize * i, backgroundColor: column ? color : false }}
+                    key={j}
+                    onMouseDown={e => {
+                      this.setTranslation(i, j);
+                    }}
+                  >
+                    {i === 0 && j === 0 && (
+                      <div
+                        style={{
+                          ...styles.dragMarker._definition,
+                          color
+                        }}
+                      >
+                        *
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  render() {
+    const { matrix } = this.props.data;
+    let ws = Math.max(matrixHelper.getYLength(matrix), matrixHelper.getXLength(matrix));
+    return (
+      <div key={this.props.name}>
+        {this.props.showControl ? (
+          <div
+            tabIndex="0"
+            onKeyDown={this.handleKeyboard}
+            style={{
+              width: ws * _itemSize,
+              height: 75 + ws * _itemSize,
+              margin: 5
+            }}
+          >
+            <div className={css(styles.flexcolumn)}>
+              <div>{this.props.name}</div>
+              <div className={css(styles.flexrow)}>
+                <Button variant="false" onClick={this.rotateRight}>
+                  <div style={{ color: "white" }}>
+                    <MdRotateLeft size={32} />
+                  </div>
+                </Button>
 
-              <Button variant="false" onClick={this.rotateLeft}>
-                <div style={{ color: "white" }}>
-                  <MdRotateRight size={32} />
-                </div>
-              </Button>
-            </div>
-            <div className={css(styles.flexrow)}>
-              <Button variant="false" onClick={this.flipY}>
-                <div style={{ color: "white" }}>
-                  <GiHorizontalFlip size={32} />
-                </div>
-              </Button>
-              <Button variant="false" onClick={this.flipX}>
-                <div style={{ color: "white" }}>
-                  <GiVerticalFlip size={32} />
-                </div>
-              </Button>
-            </div>
-          </div>
-        )}
-        <div
-          draggable
-          onDragStart={e => {
-            console.log("drag strat from showbrick");
-            this.props.onDragStart(e, this.props.name, this.state.translationX, this.state.translationY);
-          }}
-          onDragOver={e => this.props.onDragOver(e)}
-          onDrop={e => {
-            console.log("onDrop from showbrick");
-            this.props.onDrop(e);
-          }}
-        >
-          {matrix.map((row, i) => {
-            return (
-              <div className={css(styles.flexrow)} key={i}>
-                {row.map((column, j) => {
-                  return (
-                    <div
-                      className={css(styles.item)}
-                      style={{ backgroundColor: column ? color : false }}
-                      key={j}
-                      onMouseDown={e => {
-                        this.setTranslation(i, j);
-                      }}
-                    >
-                      {i === 0 && j === 0 && (
-                        <div
-                          style={{
-                            ...styles.dragMarker._definition,
-                            color
-                          }}
-                        >
-                          *
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                <Button variant="false" onClick={this.rotateLeft}>
+                  <div style={{ color: "white" }}>
+                    <MdRotateRight size={32} />
+                  </div>
+                </Button>
               </div>
-            );
-          })}
-        </div>
+              <div className={css(styles.flexrow)}>
+                <Button variant="false" onClick={this.flipY}>
+                  <div style={{ color: "white" }}>
+                    <GiHorizontalFlip size={32} />
+                  </div>
+                </Button>
+                <Button variant="false" onClick={this.flipX}>
+                  <div style={{ color: "white" }}>
+                    <GiVerticalFlip size={32} />
+                  </div>
+                </Button>
+              </div>
+            </div>
+            {this.matrixRender()}
+          </div>
+        ) : (
+          this.matrixRender()
+        )}
       </div>
     );
   }
