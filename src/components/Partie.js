@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import { StyleSheet, css } from "aphrodite";
 import { MdRotateLeft, MdRotateRight, MdFormatListNumbered } from "react-icons/md";
-import { GiHorizontalFlip, GiVerticalFlip, GiSaveArrow } from "react-icons/gi";
+import { GiHorizontalFlip, GiVerticalFlip, GiSaveArrow, GiBrain } from "react-icons/gi";
 
 import { Button } from "react-bootstrap";
 
@@ -57,35 +57,46 @@ export default class Partie extends Component {
     return res;
   }
 
-  componentDidMount = async () => {};
+  // componentDidMount = async () => {};
 
+  resolve = async () => {
+    console.log("resolve !");
+
+    let unusedBricks = [];
+    for (let name in this.state.bricks) {
+      // Pour chaque brick qui n'est pas sur le plateau
+      if (!this.state.usedLetters.includes(name)) {
+        unusedBricks.push(this.state.bricks[name]);
+      }
+    }
+    const solved = await matrixHelper.resolve(this.state.baseData, unusedBricks, this.state.usedLetters, this.state.bricksPositions);
+    console.log(solved);
+    let { usedLetters, bricksPositions, baseData } = solved;
+
+    this.setState({
+      usedLetters,
+      bricksPositions,
+      baseMatrix: baseData
+    });
+  };
   /** 
    * essai de mettre une brick dans une position
    @param name of the brick:a b c ....
-   @param x abscisse index to set the brick at
-   @param y ordonate index to set the brick at
+   @param x indice de la ligne
+   @param y indice de la colonne
    @param deleteMe delete avant de faire un set
    on represente le base comme une matrix également
-  
-   0 _ _ _ _ _ _ _ > x 
-   | 
-   | 
-   |
-   |
-   y 
-  
-  
   */
-  trySetBrickAt = (name, x, y, deleteMe) => {
-    const can = this.canSetBrick(name, x, y);
-    console.log("trySetBrickAt", { can, name, x, y });
+  trySetBrickAt = (baseData, brickMatrix, name, x, y, deleteMe) => {
+    const can = matrixHelper.canSetBrick(baseData, brickMatrix, name, x, y);
+
     if (can) {
       if (deleteMe) {
         this.removeBrickFromBaseData(name);
       }
-      this.setBrickAt(name, x, y);
+      this.setBrickAt(brickMatrix, name, x, y);
     } else {
-      console.log("cannot be set here ! ");
+      // console.log("cannot be set here ! ");
     }
   };
 
@@ -115,18 +126,17 @@ export default class Partie extends Component {
   }
 
   // met la brick dans cette position
-  setBrickAt = (name, x, y) => {
-    console.log("setBrickAt", { name, x, y });
+  setBrickAt = (brickMatrix, name, x, y) => {
     const brick = this.state.bricks[name];
     const brickSize = {
-      x: matrixHelper.getXLength(brick.matrix),
-      y: matrixHelper.getYLength(brick.matrix)
+      x: matrixHelper.getXLength(brickMatrix),
+      y: matrixHelper.getYLength(brickMatrix)
     };
     let baseData = [...this.state.baseData];
-    for (var i = 0; i < brickSize.x; i++) {
-      for (var j = 0; j < brickSize.y; j++) {
+    for (let i = 0; i < brickSize.x; i++) {
+      for (let j = 0; j < brickSize.y; j++) {
         try {
-          if (brick.matrix[i][j] === 1) {
+          if (brickMatrix[i][j] === 1) {
             baseData[i + x][j + y] = name;
           }
         } catch (error) {
@@ -138,62 +148,9 @@ export default class Partie extends Component {
 
     this.setState((prevState, props) => ({
       usedLetters: [...prevState.usedLetters, name],
-      bricksPositions: [...prevState.bricksPositions, { ...brick, name, position: { x, y } }],
+      bricksPositions: [...prevState.bricksPositions, { ...brick, matrix: brickMatrix, name, position: { l: x, c: y } }],
       baseData
     }));
-  };
-
-  // check si on peut mettre la brick à la position (x,y). il faut que la place soit bien vide
-  canSetBrick = (name, x, y) => {
-    let { baseData } = this.state;
-    const brick = this.state.bricks[name];
-    let can = true;
-    // on test que la brick ne depasse pas du base
-
-    const brickSize = {
-      x: matrixHelper.getXLength(brick.matrix),
-      y: matrixHelper.getYLength(brick.matrix)
-    };
-    const baseSize = {
-      x: matrixHelper.getXLength(baseData),
-      y: matrixHelper.getYLength(baseData)
-    };
-
-    if (x + brickSize.x > baseSize.x) {
-      console.log({ x, "brickSize.x": brickSize.x, "baseSize.x": baseSize.x, res: x + brickSize.x > baseSize.x });
-      return false;
-    }
-
-    if (y + brickSize.y > baseSize.y) {
-      console.log({ y, "brickSize.y": brickSize.y, "baseSize.y": baseSize.y, res: y + brickSize.y > baseSize.y });
-      return false;
-    }
-
-    // on crop une sous matrix de taille identique à brick dans baseData, plus facile pour comparer
-    const sub = matrixHelper.getSub(baseData, x, y, brickSize.x, brickSize.y);
-
-    if (sub.length === 0) {
-      console.error("error getsub");
-      console.log(sub, brick.matrix);
-      console.log({
-        baseData,
-        x,
-        y,
-        brickSize
-      });
-    } else {
-      for (var i = 0; i < brickSize.x; i++) {
-        for (var j = 0; j < brickSize.y; j++) {
-          if (brick.matrix[i][j] === 1 && sub[i][j] !== name) {
-            if (sub[i][j] !== false) {
-              can = false;
-            }
-          }
-        }
-      }
-    }
-
-    return can;
   };
 
   /**
@@ -220,13 +177,6 @@ export default class Partie extends Component {
     let tx = isDefined(ev.dataTransfer.getData("tx")) ? ev.dataTransfer.getData("tx") : 0;
     let ty = isDefined(ev.dataTransfer.getData("ty")) ? ev.dataTransfer.getData("ty") : 0;
 
-    console.log("onDrop", {
-      name,
-      source,
-      tx,
-      ty,
-      position
-    });
     if (name) {
       if (position !== undefined || source !== undefined) {
         switch (source) {
@@ -235,7 +185,8 @@ export default class Partie extends Component {
             break;
           //        case "brickOnBase":
           default:
-            this.trySetBrickAt(name, position.x - tx, position.y - ty, true);
+            const brick = this.state.bricks[name];
+            this.trySetBrickAt(this.state.baseData, brick.matrix, name, position.l - tx, position.c - ty, true);
         }
       }
     }
@@ -248,7 +199,7 @@ export default class Partie extends Component {
       <div className={css(styles.posRelative)}>
         {bricksPositions.map((row, x) => {
           return (
-            <div key={x} style={{ position: "absolute", left: _itemSize * row.position.y, top: _itemSize * row.position.x }}>
+            <div key={x} style={{ position: "absolute", left: _itemSize * row.position.c, top: _itemSize * row.position.l }}>
               <ShowBrick
                 name={row.name}
                 data={row}
@@ -273,7 +224,7 @@ export default class Partie extends Component {
         {baseData.map((row, x) => (
           <div key={x}>
             {row.map((col, y) => {
-              let position = { x, y };
+              let position = { x, y, l: x, c: y };
               return (
                 <div key={x + "-" + y} style={{ position: "absolute", left: _itemSize * y, top: _itemSize * x }}>
                   <div
@@ -295,8 +246,9 @@ export default class Partie extends Component {
 
   renderUnusedBricks() {
     let show = [];
-    for (var i in this.state.bricks) {
+    for (let i in this.state.bricks) {
       if (!this.state.usedLetters.includes(i)) {
+        console.log("unused", this.state.bricks[i]);
         show.push(
           <div key={i}>
             <ShowBrick
@@ -318,7 +270,7 @@ export default class Partie extends Component {
         );
       }
     }
-    
+
     return <div className="flex-container wrap">{show}</div>;
   }
 
@@ -346,6 +298,9 @@ export default class Partie extends Component {
           >
             <GiSaveArrow size={32} />
           </Button>
+          <Button variant="danger" color="#09d3ac" onClick={this.resolve}>
+            <GiBrain size={32} />
+          </Button>{" "}
         </h2>
         <br />
 
